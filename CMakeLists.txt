@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 # VitaSDK defines
-if( NOT DEFINED CMAKE_TOOLCHAIN_FILE )
-  if( DEFINED ENV{VITASDK} )
-  set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  if(DEFINED ENV{VITASDK})
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
   else()
-  message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
+    message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
   endif()
 endif()
 
 # Project start
-project(VitaShell)
+project(VitaShell C CXX)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 set(VITA_APP_NAME "VitaShell")
 set(VITA_TITLEID  "VITASHELL")
@@ -18,7 +18,7 @@ set(VITA_VERSION  "02.05")
 
 # Flags and includes
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O3 -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format-truncation -fno-lto")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c+ + 11 -fno-rtti -fno-exceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2808000000000000")
 
@@ -32,36 +32,35 @@ include_directories(
   modules/user
 )
 
-link_directories(
-  ${CMAKE_CURRENT_BINARY_DIR}
-)
+link_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-# Builds
-FUNCTION(ADD_RESOURCES out_var)
-  SET(result)
-  FOREACH(ref_f ${ARGN})
-  if (IS_ABSOLUTE "${ref_f}")
-    SET(out_f "${ref_f}.o")
-    STRING(REPLACE "${CMAKE_CURRENT_BINARY_DIR}/" "" in_f "${ref_f}")
-    SET(work_dir "${CMAKE_CURRENT_BINARY_DIR}")
-  else()
-    SET(out_f "${CMAKE_CURRENT_BINARY_DIR}/${ref_f}.o")
-    SET(in_f "${ref_f}")
-    SET(work_dir "${CMAKE_SOURCE_DIR}")
-  endif()
-  GET_FILENAME_COMPONENT(out_dir ${out_f} DIRECTORY)
-  ADD_CUSTOM_COMMAND(OUTPUT ${out_f}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${out_dir}
-    COMMAND ${CMAKE_LINKER} -r -b binary -o ${out_f} ${in_f}
-    DEPENDS ${ref_f}
-    WORKING_DIRECTORY ${work_dir}
-    COMMENT "Building resource ${out_f}"
-    VERBATIM
+# Builds resources
+function(add_resources out_var)
+  set(result)
+  foreach(ref_f ${ARGN})
+    if(IS_ABSOLUTE "${ref_f}")
+      set(out_f "${ref_f}.o")
+      string(REPLACE "${CMAKE_CURRENT_BINARY_DIR}/" "" in_f "${ref_f}")
+      set(work_dir "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+      set(out_f "${CMAKE_CURRENT_BINARY_DIR}/${ref_f}.o")
+      set(in_f "${ref_f}")
+      set(work_dir "${CMAKE_SOURCE_DIR}")
+    endif()
+    get_filename_component(out_dir ${out_f} DIRECTORY)
+    add_custom_command(
+      OUTPUT ${out_f}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${out_dir}
+      COMMAND ${CMAKE_LINKER} -r -b binary -o ${out_f} ${in_f}
+      DEPENDS ${ref_f}
+      WORKING_DIRECTORY ${work_dir}
+      COMMENT "Building resource ${out_f}"
+      VERBATIM
     )
-  LIST(APPEND result ${out_f})
-  ENDFOREACH()
-  SET(${out_var} "${result}" PARENT_SCOPE)
-ENDFUNCTION()
+    list(APPEND result ${out_f})
+  endforeach()
+  set(${out_var} "${result}" PARENT_SCOPE)
+endfunction()
 
 file(GLOB res_files RELATIVE
   ${CMAKE_SOURCE_DIR}
@@ -75,7 +74,7 @@ file(GLOB res_files RELATIVE
   resources/*.bin
 )
 
-# ugly hack
+# Build resources
 add_resources(vitashell_res
   ${res_files}
   ${CMAKE_CURRENT_BINARY_DIR}/modules/kernel/kernel.skprx
@@ -84,6 +83,7 @@ add_resources(vitashell_res
   ${CMAKE_CURRENT_BINARY_DIR}/modules/usbdevice/usbdevice.skprx
 )
 
+# Main executable
 add_executable(VitaShell
   ${vitashell_res}
   main.c
@@ -149,12 +149,14 @@ add_executable(VitaShell
   libmad/timer.c
 )
 
+# Dependencies
 add_dependencies(VitaShell vitashell_user_stubs)
 add_dependencies(VitaShell kernel.skprx-self)
 add_dependencies(VitaShell user.suprx-self)
 add_dependencies(VitaShell patch.skprx-self)
 add_dependencies(VitaShell usbdevice.skprx-self)
 
+# Libraries
 target_link_libraries(VitaShell
   ${CMAKE_CURRENT_BINARY_DIR}/modules/user/libVitaShellUser_stub_weak.a
   ftpvita
@@ -208,9 +210,10 @@ target_link_libraries(VitaShell
   SceUsbstorVStorDriver_stub
   SceVideoExport_stub
   SceVshBridge_stub
+  curl
 )
 
-# Create Vita artifacts
+# Vita artifacts
 vita_create_self(eboot.bin VitaShell UNSAFE)
 vita_create_vpk(VitaShell.vpk ${VITA_TITLEID} eboot.bin
   VERSION ${VITA_VERSION}
@@ -221,7 +224,7 @@ vita_create_vpk(VitaShell.vpk ${VITA_TITLEID} eboot.bin
        pkg/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
 )
 
-# for network update
+# Custom targets
 add_custom_target(release
   COMMAND cp eboot.bin ../release/eboot.bin
   COMMAND cp VitaShell.vpk_param.sfo ../release/param.sfo

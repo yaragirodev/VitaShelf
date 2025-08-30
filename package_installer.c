@@ -26,17 +26,26 @@
 #include "utils.h"
 #include "sfo.h"
 #include "sha1.h"
-#include <psp2/sysmodule.h> 
 
 INCLUDE_EXTERN_RESOURCE(head_bin);
 
 static int loadScePaf() {
-    static uint32_t argp[] = { 0x180000, -1, -1, 1, -1, -1 };
-    return sceSysmoduleLoadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, sizeof(argp), argp, NULL);
+  static uint32_t argp[] = { 0x180000, -1, -1, 1, -1, -1 };
+
+  int result = -1;
+
+  uint32_t buf[4];
+  buf[0] = sizeof(buf);
+  buf[1] = (uint32_t)&result;
+  buf[2] = -1;
+  buf[3] = -1;
+
+  return sceSysmoduleLoadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, sizeof(argp), argp, buf);
 }
 
 static int unloadScePaf() {
-    return sceSysmoduleUnloadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, 0, NULL, NULL);
+  uint32_t buf = 0;
+  return sceSysmoduleUnloadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, 0, NULL, &buf);
 }
 
 int promoteCma(const char *path, const char *titleid, int type) {

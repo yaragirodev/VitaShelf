@@ -20,6 +20,7 @@
 #define __UTILS_H__
 
 #include "main.h"
+#include <psp2/vshbridge.h>  // <-- Include ufficiale per _vshIoMount e vshIoUmount
 
 #define ALIGN_CENTER(a, b) (((a) - (b)) / 2)
 #define ALIGN_RIGHT(x, w) ((x) - (w))
@@ -98,9 +99,10 @@ int launchAppByUriExit(const char *titleid);
 
 char *strcasestr(const char *haystack, const char *needle);
 
-int vshIoUmount(int id, int a2, int a3, int a4);
-int _vshIoMount(int id, const char *path, int permission, void *buf);
-int vshIoMount(int id, const char *path, int permission, int a4, int a5, int a6);
+// --- Mount/unmount: usiamo le dichiarazioni ufficiali del VitaSDK ---
+// int vshIoUmount(int id, int a2, int a3, int a4);
+// int _vshIoMount(int id, const char *path, int permission, void *buf);
+// int vshIoMount(int id, const char *path, int permission, int a4, int a5, int a6);
 
 void remount(int id);
 

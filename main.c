@@ -403,7 +403,7 @@ int dialogSteps() {
           setDialogStep(DIALOG_STEP_NONE);
           
           if (checkFileExist("sdstor0:uma-lp-act-entire")) {
-            int res = vshIoMount(0xF00, NULL, 0, 0, 0, 0);
+            int res = _vshIoMount(0xF00, NULL, 0, NULL);
             if (res < 0)
               errorDialog(res);
             else
@@ -951,6 +951,7 @@ int dialogSteps() {
       if (msg_result == MESSAGE_DIALOG_RESULT_FINISHED) {
         setDialogStep(DIALOG_STEP_QR_WAITING);
         stopQR();
+        finishQR();
         SceUID thid = sceKernelCreateThread("qr_scan_thread", (SceKernelThreadEntry)qr_scan_thread, 0x10000100, 0x100000, 0, 0, NULL);
         if (thid >= 0)
           sceKernelStartThread(thid, 0, NULL);
@@ -988,6 +989,7 @@ int dialogSteps() {
     case DIALOG_STEP_QR_DOWNLOADED_VPK:
     {
       if (msg_result == MESSAGE_DIALOG_RESULT_FINISHED) {
+        
         initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[INSTALLING]);
         setDialogStep(DIALOG_STEP_INSTALL_CONFIRMED_QR);
       }

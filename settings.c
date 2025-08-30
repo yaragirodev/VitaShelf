@@ -186,7 +186,7 @@ void openSettingsMenu() {
             if (theme_name && strcasecmp(dir.d_name, theme_name) == 0)
               theme = theme_count;
             
-            strncpy(theme_options[theme_count], dir.d_name, MAX_THEME_LENGTH);
+            snprintf(theme_options[theme_count], MAX_THEME_LENGTH, "%s", dir.d_name);
             theme_count++;
           }
         }

@@ -211,6 +211,8 @@ target_link_libraries(VitaShell
   SceVideoExport_stub
   SceVshBridge_stub
   curl
+  ssl
+  crypto
 )
 
 # Vita artifacts

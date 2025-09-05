@@ -1,5 +1,5 @@
 /*
-  VitaShell
+  VitaShell - utils.h
   Copyright (C) 2015-2018, TheFloW
 
   This program is free software: you can redistribute it and/or modify
@@ -16,19 +16,27 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __UTILS_H__
-#define __UTILS_H__
+#pragma once
+
+#include <stdint.h>
+#include <psp2/ctrl.h>       // SceCtrlData
+#include <psp2/rtc.h>        // SceDateTime
+#include <psp2/appmgr.h>     // launchAppByUriExit
+#include <psp2/vshbridge.h>  // provides vshIoMount, vshIoUmount, _vshIoMount
+#include <vita2d.h>          // vita2d_texture
 
 #include "main.h"
-#include <psp2/vshbridge.h>  // <-- Include ufficiale per _vshIoMount e vshIoUmount
 
-#define ALIGN_CENTER(a, b) (((a) - (b)) / 2)
-#define ALIGN_RIGHT(x, w) ((x) - (w))
+// Alignment helpers for UI rendering
+#define ALIGN_CENTER(a, b)  (((a) - (b)) / 2)
+#define ALIGN_RIGHT(x, w)   ((x) - (w))
 
-#define ANALOG_CENTER 128
-#define ANALOG_THRESHOLD 64
-#define ANALOG_SENSITIVITY 16
+// Analog stick constants
+#define ANALOG_CENTER      128
+#define ANALOG_THRESHOLD    64
+#define ANALOG_SENSITIVITY  16
 
+// Enumeration for mapped pad buttons
 enum PadButtons {
   PAD_UP,
   PAD_DOWN,
@@ -55,55 +63,61 @@ enum PadButtons {
   PAD_N_BUTTONS
 };
 
+// Pad state type
 typedef uint8_t Pad[PAD_N_BUTTONS];
 
+// Global pad states
 extern SceCtrlData pad;
 extern Pad old_pad, current_pad, pressed_pad, released_pad, hold_pad, hold2_pad;
 extern Pad hold_count, hold2_count;
 
+// Math helpers
 float easeOut(float x0, float x1, float a, float b);
 
+// Drawing functions
 void startDrawing(vita2d_texture *bg);
-void endDrawing();
+void endDrawing(void);
 
-void closeWaitDialog();
-
+// Dialog helpers
+void closeWaitDialog(void);
 void errorDialog(int error);
 void infoDialog(const char *msg, ...);
 
+// Storage helpers
 int checkMemoryCardFreeSpace(const char *path, uint64_t size);
 
-void initPowerTickThread();
-void powerLock();
-void powerUnlock();
+// Power management helpers
+void initPowerTickThread(void);
+void powerLock(void);
+void powerUnlock(void);
 
+// Pad handling
 void setEnterButton(int circle);
-void readPad();
-int holdButtons(SceCtrlData *pad, uint32_t buttons, uint64_t time);
+void readPad(void);
+int holdButtons(SceCtrlData *data, uint32_t buttons, uint64_t time);
 
+// Path helpers
 int hasEndSlash(const char *path);
 int removeEndSlash(char *path);
 int addEndSlash(char *path);
 
-void getSizeString(char string[16], uint64_t size);
+// File size formatting
+void getSizeString(char string[20], uint64_t size);
 
+// Time conversion and formatting
 void convertUtcToLocalTime(SceDateTime *time_local, SceDateTime *time_utc);
 void convertLocalTimeToUtc(SceDateTime *time_utc, SceDateTime *time_local);
-
 void getDateString(char string[24], int date_format, SceDateTime *time);
 void getTimeString(char string[16], int time_format, SceDateTime *time);
 
+// Debugging
 int debugPrintf(const char *text, ...);
 
+// App launching
 int launchAppByUriExit(const char *titleid);
 
+// String helpers (non-standard)
 char *strcasestr(const char *haystack, const char *needle);
 
-// --- Mount/unmount: usiamo le dichiarazioni ufficiali del VitaSDK ---
-// int vshIoUmount(int id, int a2, int a3, int a4);
-// int _vshIoMount(int id, const char *path, int permission, void *buf);
-// int vshIoMount(int id, const char *path, int permission, int a4, int a5, int a6);
-
+// Remount storage device
 void remount(int id);
-
-#endif

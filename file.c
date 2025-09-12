@@ -23,7 +23,10 @@
 #include "file.h"
 #include "utils.h"
 #include "sha1.h"
+#include "sha256.h"
+#include "md5.h"
 #include "strnatcmp.h"
+#include "io_process.h"
 
 static char *devices[] = {
     "gro0:",
@@ -120,6 +123,9 @@ int checkFolderExist(const char *folder) {
 }
 
 int getFileSha1(const char *file, uint8_t *pSha1Out, FileProcessParam *param) {
+  // Update current file being hashed
+  SetCurrentFile(file);
+  
   // Set up SHA1 context
   SHA1_CTX ctx;
   sha1_init(&ctx);
@@ -172,6 +178,126 @@ int getFileSha1(const char *file, uint8_t *pSha1Out, FileProcessParam *param) {
 
   // Final iteration of SHA1 sum, dump final value into pSha1Out buffer
   sha1_final(&ctx, pSha1Out);
+
+  // Free up file buffer
+  free(buf);
+
+  // Close file proper
+  sceIoClose(fd);
+  return 1;
+}
+
+int getFileMd5(const char *file, uint8_t *pMd5Out, FileProcessParam *param) {
+  // Update current file being hashed
+  SetCurrentFile(file);
+  
+  // Set up MD5 context
+  MD5_CTX ctx;
+  md5_init(&ctx);
+
+  // Open the file to read, else return the error
+  SceUID fd = sceIoOpen(file, SCE_O_RDONLY, 0);
+  if (fd < 0)
+    return fd;
+
+  // Open up the buffer for copying data into
+  void *buf = memalign(4096, TRANSFER_SIZE);
+
+  // Actually take the MD5 sum
+  while (1) {
+    int read = sceIoRead(fd, buf, TRANSFER_SIZE);
+
+    if (read < 0) {
+      free(buf);
+      sceIoClose(fd);
+      return read;
+    }
+
+    if (read == 0)
+      break;
+
+    md5_update(&ctx, buf, read);
+
+    if (param) {
+      if (param->value)
+        (*param->value)++; // Note: Max value is filesize/TRANSFER_SIZE
+
+      if (param->SetProgress)
+        param->SetProgress(param->value ? *param->value : 0, param->max);
+
+      if (param->cancelHandler && param->cancelHandler()) {
+        free(buf);
+        sceIoClose(fd);
+        return 0;
+      }
+
+      if ((*param->value) % 8192 == 0)
+        sceKernelDelayThread(500000);
+    }
+  }
+
+  // Final iteration of MD5 sum
+  md5_final(&ctx, pMd5Out);
+
+  // Free up file buffer
+  free(buf);
+
+  // Close file proper
+  sceIoClose(fd);
+  return 1;
+}
+
+int getFileSha256(const char *file, uint8_t *pSha256Out, FileProcessParam *param) {
+  // Update current file being hashed
+  SetCurrentFile(file);
+  
+  // Set up SHA256 context
+  SHA256_CTX ctx;
+  sha256_init(&ctx);
+
+  // Open the file to read, else return the error
+  SceUID fd = sceIoOpen(file, SCE_O_RDONLY, 0);
+  if (fd < 0)
+    return fd;
+
+  // Open up the buffer for copying data into
+  void *buf = memalign(4096, TRANSFER_SIZE);
+
+  // Actually take the SHA256 sum
+  while (1) {
+    int read = sceIoRead(fd, buf, TRANSFER_SIZE);
+
+    if (read < 0) {
+      free(buf);
+      sceIoClose(fd);
+      return read;
+    }
+
+    if (read == 0)
+      break;
+
+    sha256_update(&ctx, buf, read);
+
+    if (param) {
+      if (param->value)
+        (*param->value)++; // Note: Max value is filesize/TRANSFER_SIZE
+
+      if (param->SetProgress)
+        param->SetProgress(param->value ? *param->value : 0, param->max);
+
+      if (param->cancelHandler && param->cancelHandler()) {
+        free(buf);
+        sceIoClose(fd);
+        return 0;
+      }
+
+      if ((*param->value) % 8192 == 0)
+        sceKernelDelayThread(500000);
+    }
+  }
+
+  // Final iteration of SHA256 sum
+  sha256_final(&ctx, pSha256Out);
 
   // Free up file buffer
   free(buf);
@@ -247,6 +373,9 @@ int getPathInfo(const char *path, uint64_t *size, uint32_t *folders,
 }
 
 int removePath(const char *path, FileProcessParam *param) {
+  // Update current file/directory being processed
+  SetCurrentFile(path);
+  
   SceUID dfd = sceIoDopen(path);
   if (dfd >= 0) {
     int res = 0;
@@ -333,6 +462,9 @@ int removePath(const char *path, FileProcessParam *param) {
 }
 
 int copyFile(const char *src_path, const char *dst_path, FileProcessParam *param) {
+  // Update current file being processed
+  SetCurrentFile(src_path);
+  
   // The source and destination paths are identical
   if (strcasecmp(src_path, dst_path) == 0) {
     return VITASHELL_ERROR_SRC_AND_DST_IDENTICAL;
@@ -421,6 +553,12 @@ int copyFile(const char *src_path, const char *dst_path, FileProcessParam *param
 }
 
 int copyPath(const char *src_path, const char *dst_path, FileProcessParam *param) {
+  // Update current directory being processed (only for large operations)
+  static int call_count = 0;
+  if (++call_count % 10 == 0) { // Update every 10th call to reduce overhead
+    SetCurrentFile(src_path);
+  }
+  
   // The source and destination paths are identical
   if (strcasecmp(src_path, dst_path) == 0) {
     return VITASHELL_ERROR_SRC_AND_DST_IDENTICAL;

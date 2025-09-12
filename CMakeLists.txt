@@ -14,7 +14,7 @@ project(VitaShell C CXX)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 set(VITA_APP_NAME "VitaShell")
 set(VITA_TITLEID  "VITASHELL")
-set(VITA_VERSION  "02.06")
+set(VITA_VERSION  "02.09")
 
 # Flags and includes
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O3 -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format-truncation -fno-lto")
@@ -126,6 +126,7 @@ add_executable(VitaShell
   elf.c
   sha1.c
   sha256.c
+  md5.c
   minizip/zip.c
   minizip/ioapi.c
   bm.c

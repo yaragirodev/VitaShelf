@@ -101,7 +101,8 @@ COPIED_FOLDER                        = "%d Ordner kopiert."
 COPIED_FILES_FOLDERS                 = "%d Element(e) kopiert."
 
 # Fragen in Dialogfenstern
-DELETE_FILE_QUESTION                 = "Möchtest du die Datei wirklich löschen?"
+DELETE_FILE_QUESTION                 = "Bist du sicher, dass du diese Datei löschen möchtest?"
+DELETE_IMPORTANT_FILE_QUESTION       = "WARNUNG: Dies scheint eine System- oder wichtige Datei zu sein.\\Bist du dir absolut sicher, dass du sie löschen möchtest?"
 DELETE_FOLDER_QUESTION               = "Möchtest du den Ordner wirklich löschen?"
 DELETE_FILES_FOLDERS_QUESTION        = "Möchtest du die ausgewählten Elemente wirklich löschen?"
 EXPORT_FILE_QUESTION                 = "Möchtest du diese Datei zu den Medien exportieren?"
@@ -120,7 +121,7 @@ INSTALL_FOLDER_QUESTION              = "Möchtest du diesen Ordner installieren?
 INSTALL_QUESTION                     = "Möchtest du dieses Paket installieren?"
 INSTALL_WARNING                      = "Dieses Paket benötigt erweiterte Berechtigungen.\Es wird Zugriff auf deine persönlichen Informationen haben.\Bitte installiere es nur, falls es aus einer vertrauenswürdigen Quelle stammt\oder fahre auf eigene Gefahr fort.\\Möchtest du die Installation fortsetzen?"
 INSTALL_BRICK_WARNING                = "Dieses Paket nutzt Funktionen, um Partitionen zu\verwalten und kann möglicherweise dein Gerät zerstören.\Bitte installiere es nur, falls es aus einer vertrauenswürdigen Quelle stammt\oder fahre auf eigene Gefahr fort.\\Möchtest du die Installation fortsetzen?"
-HASH_FILE_QUESTION                   = "Einen SHA1-Hash zu erstellen kann einige Zeit\in Anspruch nehmen. Die benötigte Zeit\ist von der Dateigröße abhängig.\\Möchtest du fortfahren?"
+HASH_FILE_QUESTION                   = "Einen Hash zu erstellen kann einige Zeit\in Anspruch nehmen. Die ben├Âtigte Zeit\ist von der Dateigr├Â├ƒe abh├ñngig.\\M├Âchtest du fortfahren?"
 SAVE_MODIFICATIONS                   = "Möchtest du die Änderungen speichern?"
 REFRESH_LIVEAREA_QUESTION            = "Die Livearea zu aktualisieren kann einige Zeit in Anspruch nehmen.\Möchtest du fortfahren?"
 

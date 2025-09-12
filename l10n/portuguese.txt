@@ -101,7 +101,8 @@ COPIED_FOLDER                        = "%d pasta copiada."
 COPIED_FILES_FOLDERS                 = "%d ficheiros/pastas copiados(as)."
 
 # Dialog questions
-DELETE_FILE_QUESTION                 = "Tem a certeza de que deseja eliminar este ficheiro?"
+DELETE_FILE_QUESTION                 = "Tem a certeza de que pretende eliminar este ficheiro?"
+DELETE_IMPORTANT_FILE_QUESTION       = "AVISO: Este parece ser um ficheiro de sistema ou importante.\\Tem a certeza absoluta de que o pretende eliminar?"
 DELETE_FOLDER_QUESTION               = "Tem a certeza de que deseja eliminar esta pasta?"
 DELETE_FILES_FOLDERS_QUESTION        = "Tem a certeza de que deseja eliminar estes(as) ficheiros/pastas?"
 EXPORT_FILE_QUESTION                 = "Tem a certeza de que deseja exportar este ficheiro para média?"
@@ -116,7 +117,7 @@ INSTALL_FOLDER_QUESTION              = "Deseja instalar a pasta?\ATENÇÃO: Esta
 INSTALL_QUESTION                     = "Deseja instalar este pacote?"
 INSTALL_WARNING                      = "Este pacote solicita permissões estendidas.\Ele terá acesso às suas informações pessoais.\Se não o obteve de fonte segura,\por favor, proceda por sua conta e risco.\\Deseja continuar com a instalação?"
 INSTALL_BRICK_WARNING                = "AVISO: Este pacote utiliza funções que remonta\a partição e poderá bloquear (brick) o seu dispositivo.\Se não o obteve de fonte segura,\por favor, proceda por sua conta e risco.\\Deseja continuar com a instalação?"
-HASH_FILE_QUESTION                   = "Calcular o SHA1 poderá demorar algum tempo. Deseja continuar?"
+HASH_FILE_QUESTION                   = "Calcular o hash poder├í demorar algum tempo. Deseja continuar?"
 SAVE_MODIFICATIONS                   = "Deseja guardar as alterações?"
 REFRESH_LIVEAREA_QUESTION            = "Atualizar a LiveArea poderá demorar algum tempo. Continuar?"
 

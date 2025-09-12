@@ -106,7 +106,8 @@ COPIED_FILES_FOLDERS                 = "%d fichiers/dossiers copiés."
 IMPORTED_LICENSES                    = "%d licence(s) importée(s)."
 
 # Dialog questions
-DELETE_FILE_QUESTION                 = "Voulez-vous vraiment supprimer ce fichier?"
+DELETE_FILE_QUESTION                 = "Êtes-vous sûr de vouloir supprimer ce fichier?"
+DELETE_IMPORTANT_FILE_QUESTION       = "ATTENTION: Ceci semble être un fichier système ou important.\\Êtes-vous absolument sûr de vouloir le supprimer?"
 DELETE_FOLDER_QUESTION               = "Voulez-vous vraiment supprimer ce dossier?"
 DELETE_FILES_FOLDERS_QUESTION        = "Voulez-vous vraiment supprimer ces fichiers/dossiers?"
 EXPORT_FILE_QUESTION                 = "Voulez-vous exporter ce fichier vers la médiathèque PsVita?"
@@ -125,7 +126,7 @@ INSTALL_FOLDER_QUESTION              = "Voulez-vous vraiment installer ce dossie
 INSTALL_QUESTION                     = "Voulez-vous vraiment installer ce paquet?"
 INSTALL_WARNING                      = "Ce paquet requiert des autorisations étendues.\Il aura accès à vos informations personnelles.\S'il ne provient pas d'une source de confiance,\procedez avec prudence.\\Voulez-vous tout de même l'installer?"
 INSTALL_BRICK_WARNING                = "Ce paquet utilise des fonctions pour remonter des\partitions et peut potentiellement bricker votre console.\S'il ne provient pas d'une source de confiance,\procedez avec prudence.\\Voulez-vous tout de même l'installer?"
-HASH_FILE_QUESTION                   = "Le calcul du hash SHA1 peut prendre un certain temps.\\Voulez-vous continuer?"
+HASH_FILE_QUESTION                   = "Le calcul du hash peut prendre un certain temps.\\Voulez-vous continuer?"
 SAVE_MODIFICATIONS                   = "Voulez-vous enregistrer vos modifications?"
 REFRESH_LIVEAREA_QUESTION            = "L'actualisation du livearea peut prendre un certain temps.\\Voulez-vous continuer?"
 REFRESH_LICENSE_DB_QUESTION          = "L'actualisation de la base de données des licences\peut prendre un certain temps.\\Voulez-vous continuer?"

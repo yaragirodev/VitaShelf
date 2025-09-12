@@ -122,6 +122,7 @@ IMPORTED_LICENSES                    = "%d licença(s) importada(s)."
 
 # Dialog questions
 DELETE_FILE_QUESTION                 = "Tem certeza de que deseja excluir este arquivo?"
+DELETE_IMPORTANT_FILE_QUESTION       = "AVISO: Este parece ser um arquivo de sistema ou importante.\\Tem certeza absoluta de que deseja excluí-lo?"
 DELETE_FOLDER_QUESTION               = "Tem certeza de que deseja excluir esta pasta?"
 DELETE_FILES_FOLDERS_QUESTION        = "Tem certeza de que deseja excluir estes arquivos/pastas?"
 EXPORT_FILE_QUESTION                 = "Deseja exportar este arquivo para mídia?"
@@ -140,7 +141,7 @@ INSTALL_FOLDER_QUESTION              = "Deseja instalar esta pasta?\Cuidado: est
 INSTALL_QUESTION                     = "Deseja instalar este pacote?"
 INSTALL_WARNING                      = "Este pacote solicita permissões estendidas.\Ele terá acesso às suas informações pessoais.\Se você não o obteve de uma fonte confiável,\proceda com cuidado.\\Deseja continuar com a instalação?"
 INSTALL_BRICK_WARNING                = "Este pacote usa funções que remontam partições\e pode, potencialmente, brickar seu dispositivo.\Se você não o obteve de uma fonte confiável,\proceda com cuidado.\\Deseja continuar com a instalação?"
-HASH_FILE_QUESTION                   = "O hashing SHA1 pode levar um longo tempo. Deseja continuar?"
+HASH_FILE_QUESTION                   = "O hashing pode levar um longo tempo. Deseja continuar?"
 SAVE_MODIFICATIONS                   = "Deseja salvar as modificações?"
 REFRESH_LIVEAREA_QUESTION            = "Atualizar a LiveArea™ pode levar um longo tempo. Deseja continuar?"
 REFRESH_LICENSE_DB_QUESTION          = "Atualizar o banco de dados de licenças pode\levar um longo tempo. Deseja continuar?"

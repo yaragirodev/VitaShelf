@@ -54,7 +54,7 @@
 
 // VitaShell version major.minor
 #define VITASHELL_VERSION_MAJOR 0x02
-#define VITASHELL_VERSION_MINOR 0x08
+#define VITASHELL_VERSION_MINOR 0x09
 
 #define VITASHELL_VERSION ((VITASHELL_VERSION_MAJOR << 0x18) | (VITASHELL_VERSION_MINOR << 0x10))
 
@@ -222,6 +222,12 @@ enum DialogSteps {
   DIALOG_STEP_HASH_QUESTION,
   DIALOG_STEP_HASH_CONFIRMED,
   DIALOG_STEP_HASHING,
+  DIALOG_STEP_HASH_MD5_QUESTION,
+  DIALOG_STEP_HASH_MD5_CONFIRMED,
+  DIALOG_STEP_HASHING_MD5,
+  DIALOG_STEP_HASH_SHA256_QUESTION,
+  DIALOG_STEP_HASH_SHA256_CONFIRMED,
+  DIALOG_STEP_HASHING_SHA256,
 
   DIALOG_STEP_SETTINGS_AGREEMENT,
   DIALOG_STEP_SETTINGS_STRING,
@@ -271,6 +277,8 @@ void initUsb();
 
 void drawScrollBar(int pos, int n);
 void drawShellInfo(const char *path);
+
+int isImportantFile(const char *path);
 
 void ftpvita_PROM(ftpvita_client_info_t *client);
 

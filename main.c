@@ -50,6 +50,33 @@
 
 int _newlib_heap_size_user = 128 * 1024 * 1024;
 
+// Function to check if file is important/system file
+int isImportantFile(const char *path) {
+  if (!path) return 0;
+  
+  // Convert to lowercase for comparison
+  char lower_path[MAX_PATH_LENGTH];
+  int i;
+  for (i = 0; i < MAX_PATH_LENGTH - 1 && path[i] != '\0'; i++) {
+    lower_path[i] = tolower(path[i]);
+  }
+  lower_path[i] = '\0';
+  
+  // Check for important system files and directories
+  if (strstr(lower_path, "os0:") || strstr(lower_path, "vs0:") || 
+      strstr(lower_path, "vd0:") || strstr(lower_path, "tm0:") ||
+      strstr(lower_path, "ur0:tai/") || strstr(lower_path, "ux0:tai/") ||
+      strstr(lower_path, "config.txt") || strstr(lower_path, "boot_config.txt") ||
+      strstr(lower_path, "vitashell") || strstr(lower_path, "henkaku") ||
+      strstr(lower_path, "taihen") || strstr(lower_path, "molecule") ||
+      strstr(lower_path, ".skprx") || strstr(lower_path, ".suprx") ||
+      strstr(lower_path, "eboot.bin") || strstr(lower_path, "param.sfo")) {
+    return 1;
+  }
+  
+  return 0;
+}
+
 static volatile int dialog_step = DIALOG_STEP_NONE;
 
 static char install_path[MAX_PATH_LENGTH];
@@ -160,8 +187,10 @@ void drawShellInfo(const char *path) {
       char free_string[16];
       getSizeString(free_string, free_size);
       
-      snprintf(storage_string, sizeof(storage_string), "%s: %s free", 
-               current_device, free_string);
+      char total_string[16];
+      getSizeString(total_string, max_size);
+      snprintf(storage_string, sizeof(storage_string), "%s: %s/%s free", 
+               current_device, free_string, total_string);
       
       // Get color based on free space percentage
       uint32_t storage_color = getFreeSpaceColor(free_size, max_size);
@@ -795,6 +824,7 @@ int dialogSteps() {
 
         HashArguments args;
         args.file_path = cur_file;
+        args.hash_type = HASH_TYPE_SHA1;
 
         setDialogStep(DIALOG_STEP_HASHING);
 
@@ -885,8 +915,18 @@ int dialogSteps() {
           break;
         }
 
+        // Set refresh first, then show success message
         refresh = REFRESH_MODE_NORMAL;
-        setDialogStep(DIALOG_STEP_NONE);
+        
+        // Safety check for language container
+        const char *success_msg = "Installation completed successfully."; // fallback
+        if (INSTALL_COMPLETE_SUCCESS < LANGUAGE_CONTAINER_SIZE && 
+            language_container[INSTALL_COMPLETE_SUCCESS] != NULL) {
+          success_msg = language_container[INSTALL_COMPLETE_SUCCESS];
+        }
+        
+        initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_OK, success_msg);
+        setDialogStep(DIALOG_STEP_INFO);
       }
 
       break;
@@ -1228,6 +1268,90 @@ int dialogSteps() {
         setDialogStep(DIALOG_STEP_NONE);
       }
       
+      break;
+    }
+    
+    case DIALOG_STEP_HASH_MD5_QUESTION:
+    {
+      if (msg_result == MESSAGE_DIALOG_RESULT_YES) {
+        // Throw up the progress bar, enter hashing state
+        initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[HASHING]);
+        setDialogStep(DIALOG_STEP_HASH_MD5_CONFIRMED);
+      } else if (msg_result == MESSAGE_DIALOG_RESULT_NO) {
+        // Quit
+        setDialogStep(DIALOG_STEP_NONE);
+      }
+
+      break;
+    }
+    
+    case DIALOG_STEP_HASH_MD5_CONFIRMED:
+    {
+      if (msg_result == MESSAGE_DIALOG_RESULT_RUNNING) {
+        // User has confirmed desire to hash, get requested file entry
+        FileListEntry *file_entry = fileListGetNthEntry(&file_list, base_pos + rel_pos);
+        if (!file_entry) {
+          setDialogStep(DIALOG_STEP_NONE);
+          break;
+        }
+        
+        // Place the full file path in cur_file
+        snprintf(cur_file, MAX_PATH_LENGTH, "%s%s", file_list.path, file_entry->name);
+
+        HashArguments args;
+        args.file_path = cur_file;
+        args.hash_type = HASH_TYPE_MD5;
+
+        setDialogStep(DIALOG_STEP_HASHING_MD5);
+
+        // Create a thread to run out actual sum
+        SceUID thid = sceKernelCreateThread("hash_md5_thread", (SceKernelThreadEntry)hash_thread, 0x40, 0x100000, 0, 0, NULL);
+        if (thid >= 0)
+          sceKernelStartThread(thid, sizeof(HashArguments), &args);
+      }
+
+      break;
+    }
+    
+    case DIALOG_STEP_HASH_SHA256_QUESTION:
+    {
+      if (msg_result == MESSAGE_DIALOG_RESULT_YES) {
+        // Throw up the progress bar, enter hashing state
+        initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[HASHING]);
+        setDialogStep(DIALOG_STEP_HASH_SHA256_CONFIRMED);
+      } else if (msg_result == MESSAGE_DIALOG_RESULT_NO) {
+        // Quit
+        setDialogStep(DIALOG_STEP_NONE);
+      }
+
+      break;
+    }
+    
+    case DIALOG_STEP_HASH_SHA256_CONFIRMED:
+    {
+      if (msg_result == MESSAGE_DIALOG_RESULT_RUNNING) {
+        // User has confirmed desire to hash, get requested file entry
+        FileListEntry *file_entry = fileListGetNthEntry(&file_list, base_pos + rel_pos);
+        if (!file_entry) {
+          setDialogStep(DIALOG_STEP_NONE);
+          break;
+        }
+        
+        // Place the full file path in cur_file
+        snprintf(cur_file, MAX_PATH_LENGTH, "%s%s", file_list.path, file_entry->name);
+
+        HashArguments args;
+        args.file_path = cur_file;
+        args.hash_type = HASH_TYPE_SHA256;
+
+        setDialogStep(DIALOG_STEP_HASHING_SHA256);
+
+        // Create a thread to run out actual sum
+        SceUID thid = sceKernelCreateThread("hash_sha256_thread", (SceKernelThreadEntry)hash_thread, 0x40, 0x100000, 0, 0, NULL);
+        if (thid >= 0)
+          sceKernelStartThread(thid, sizeof(HashArguments), &args);
+      }
+
       break;
     }
     

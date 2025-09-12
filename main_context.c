@@ -137,19 +137,23 @@ MenuEntry menu_adhoc_entries[] = {
 #define N_MENU_ADHOC_ENTRIES (sizeof(menu_adhoc_entries) / sizeof(MenuEntry))
 
 enum MenuMoreEntrys {
+  MENU_MORE_ENTRY_CALCULATE_SHA1,
+  MENU_MORE_ENTRY_CALCULATE_MD5,
+  MENU_MORE_ENTRY_CALCULATE_SHA256,
   MENU_MORE_ENTRY_COMPRESS,
   MENU_MORE_ENTRY_INSTALL_ALL,
   MENU_MORE_ENTRY_INSTALL_FOLDER,
   MENU_MORE_ENTRY_EXPORT_MEDIA,
-  MENU_MORE_ENTRY_CALCULATE_SHA1,
 };
 
 MenuEntry menu_more_entries[] = {
-  { COMPRESS,       14, 0, CTX_INVISIBLE },
-  { INSTALL_ALL,    15, 0, CTX_INVISIBLE },
-  { INSTALL_FOLDER, 16, 0, CTX_INVISIBLE },
-  { EXPORT_MEDIA,   17, 0, CTX_INVISIBLE },
-  { CALCULATE_SHA1, 18, 0, CTX_INVISIBLE },
+  { CALCULATE_SHA1,   0, 0, CTX_INVISIBLE },
+  { CALCULATE_MD5,    1, 0, CTX_INVISIBLE },
+  { CALCULATE_SHA256, 2, 0, CTX_INVISIBLE },
+  { COMPRESS,         4, 0, CTX_INVISIBLE },
+  { INSTALL_ALL,      5, 0, CTX_INVISIBLE },
+  { INSTALL_FOLDER,   6, 0, CTX_INVISIBLE },
+  { EXPORT_MEDIA,     7, 0, CTX_INVISIBLE },
 };
 
 #define N_MENU_MORE_ENTRIES (sizeof(menu_more_entries) / sizeof(MenuEntry))
@@ -571,6 +575,8 @@ void setContextMenuMoreVisibilities() {
     menu_more_entries[MENU_MORE_ENTRY_INSTALL_FOLDER].visibility = CTX_INVISIBLE;
     menu_more_entries[MENU_MORE_ENTRY_EXPORT_MEDIA].visibility = CTX_INVISIBLE;
     menu_more_entries[MENU_MORE_ENTRY_CALCULATE_SHA1].visibility = CTX_INVISIBLE;
+    menu_more_entries[MENU_MORE_ENTRY_CALCULATE_MD5].visibility = CTX_INVISIBLE;
+    menu_more_entries[MENU_MORE_ENTRY_CALCULATE_SHA256].visibility = CTX_INVISIBLE;
   }
 
   // Invisble operations in archives
@@ -580,10 +586,14 @@ void setContextMenuMoreVisibilities() {
     menu_more_entries[MENU_MORE_ENTRY_INSTALL_FOLDER].visibility = CTX_INVISIBLE;
     menu_more_entries[MENU_MORE_ENTRY_EXPORT_MEDIA].visibility = CTX_INVISIBLE;
     menu_more_entries[MENU_MORE_ENTRY_CALCULATE_SHA1].visibility = CTX_INVISIBLE;
+    menu_more_entries[MENU_MORE_ENTRY_CALCULATE_MD5].visibility = CTX_INVISIBLE;
+    menu_more_entries[MENU_MORE_ENTRY_CALCULATE_SHA256].visibility = CTX_INVISIBLE;
   }
 
   if (file_entry->is_folder) {
     menu_more_entries[MENU_MORE_ENTRY_CALCULATE_SHA1].visibility = CTX_INVISIBLE;
+    menu_more_entries[MENU_MORE_ENTRY_CALCULATE_MD5].visibility = CTX_INVISIBLE;
+    menu_more_entries[MENU_MORE_ENTRY_CALCULATE_SHA256].visibility = CTX_INVISIBLE;
 
     char check_path[MAX_PATH_LENGTH];
 
@@ -1001,12 +1011,37 @@ static int contextMenuMainEnterCallback(int sel, void *context) {
       FileListEntry *file_entry = fileListGetNthEntry(&file_list, base_pos + rel_pos);
       if (file_entry) {
         char *message;
+        char full_path[MAX_PATH_LENGTH];
+        snprintf(full_path, MAX_PATH_LENGTH, "%s%s", file_list.path, file_entry->name);
 
+        // Check if file is important/dangerous
+        int is_important = isImportantFile(full_path);
+        
         // On marked entry
         if (mark_list.length > 1 && fileListFindEntry(&mark_list, file_entry->name)) {
-          message = language_container[DELETE_FILES_FOLDERS_QUESTION];
+          // Check if any marked file is important
+          int important_found = 0;
+          FileListEntry *mark_entry = mark_list.head;
+          for (int i = 0; i < mark_list.length && !important_found; i++) {
+            char mark_path[MAX_PATH_LENGTH];
+            snprintf(mark_path, MAX_PATH_LENGTH, "%s%s", file_list.path, mark_entry->name);
+            if (isImportantFile(mark_path)) {
+              important_found = 1;
+            }
+            mark_entry = mark_entry->next;
+          }
+          
+          if (important_found) {
+            message = language_container[DELETE_IMPORTANT_FILE_QUESTION];
+          } else {
+            message = language_container[DELETE_FILES_FOLDERS_QUESTION];
+          }
         } else {
-          message = language_container[file_entry->is_folder ? DELETE_FOLDER_QUESTION : DELETE_FILE_QUESTION];
+          if (is_important) {
+            message = language_container[DELETE_IMPORTANT_FILE_QUESTION];
+          } else {
+            message = language_container[file_entry->is_folder ? DELETE_FOLDER_QUESTION : DELETE_FILE_QUESTION];
+          }
         }
 
         initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, message);
@@ -1251,6 +1286,22 @@ static int contextMenuMoreEnterCallback(int sel, void *context) {
       // Ensure user wants to actually take the hash
       initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[HASH_FILE_QUESTION]);
       setDialogStep(DIALOG_STEP_HASH_QUESTION);
+      break;
+    }
+    
+    case MENU_MORE_ENTRY_CALCULATE_MD5:
+    {
+      // Ensure user wants to actually take the hash
+      initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[HASH_FILE_QUESTION]);
+      setDialogStep(DIALOG_STEP_HASH_MD5_QUESTION);
+      break;
+    }
+    
+    case MENU_MORE_ENTRY_CALCULATE_SHA256:
+    {
+      // Ensure user wants to actually take the hash
+      initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[HASH_FILE_QUESTION]);
+      setDialogStep(DIALOG_STEP_HASH_SHA256_QUESTION);
       break;
     }
   }

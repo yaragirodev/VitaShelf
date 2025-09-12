@@ -30,9 +30,17 @@ enum CopyModes {
   COPY_MODE_EXTRACT
 };
 
+enum HashTypes {
+  HASH_TYPE_SHA1,
+  HASH_TYPE_MD5,
+  HASH_TYPE_SHA256
+};
+
 typedef struct {
   uint64_t max;
   int show_kbs;
+  char *current_file;
+  int show_eta;
 } UpdateArguments;
 
 typedef struct {
@@ -56,11 +64,14 @@ typedef struct {
 
 typedef struct {
   char *file_path;
+  int hash_type;
 } HashArguments;
 
 int cancelHandler();
 void SetProgress(uint64_t value, uint64_t max);
+void SetCurrentFile(const char *filename);
 SceUID createStartUpdateThread(uint64_t max, int show_kbs);
+SceUID createStartUpdateThreadEx(uint64_t max, int show_kbs, char *current_file, int show_eta);
 
 int delete_thread(SceSize args_size, DeleteArguments *args);
 int copy_thread(SceSize args_size, CopyArguments *args);

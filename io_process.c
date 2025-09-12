@@ -26,6 +26,9 @@
 #include "utils.h"
 
 static uint64_t current_value = 0;
+static char current_file_name[256] = {0};
+static uint64_t start_time = 0;
+static uint64_t last_update_time = 0;
 
 int cancelHandler() {
   return (updateMessageDialog() != MESSAGE_DIALOG_RESULT_RUNNING);
@@ -35,31 +38,87 @@ void SetProgress(uint64_t value, uint64_t max) {
   current_value = value;
 }
 
+void SetCurrentFile(const char *filename) {
+  if (!filename || filename[0] == '\0') {
+    current_file_name[0] = '\0';
+    return;
+  }
+  
+  // Extract just the filename from path
+  const char *basename = strrchr(filename, '/');
+  if (basename) {
+    basename++; // Skip the '/'
+  } else {
+    basename = filename;
+  }
+  
+  // Quick copy with length limit
+  int i = 0;
+  const int max_len = 50; // Reduced for better performance
+  
+  while (i < max_len - 1 && basename[i] != '\0') {
+    current_file_name[i] = basename[i];
+    i++;
+  }
+  
+  // Add truncation indicator if needed
+  if (basename[i] != '\0') {
+    if (i > 3) {
+      current_file_name[i-3] = '.';
+      current_file_name[i-2] = '.';
+      current_file_name[i-1] = '.';
+    }
+  }
+  
+  current_file_name[i] = '\0';
+}
+
 static int update_thread(SceSize args_size, UpdateArguments *args) {
   uint64_t previous_value = current_value;
   SceUInt64 cur_micros = 0, delta_micros = 0, last_micros = 0;
   double kbs = 0.0;
+  int update_count = 0;
+  
+  // Initialize start time
+  if (start_time == 0) {
+    start_time = sceKernelGetProcessTimeWide();
+    last_update_time = start_time;
+    last_micros = start_time;
+  }
 
   while (current_value < args->max && isMessageDialogRunning()) {
-    // Show KB/s
-    if (args->show_kbs) {
-      cur_micros = sceKernelGetProcessTimeWide();
-      if (cur_micros >= (last_micros + 1000 * 1000)) {
-        delta_micros = cur_micros - last_micros;
-        last_micros = cur_micros;
-        kbs = (double)(current_value - previous_value) / 1024.0;
-        previous_value = current_value;
-
-        if (kbs > 0) {
-          char msg[32];
-          sprintf(msg, "%.0f KB/s", kbs);
-          sceMsgDialogProgressBarSetInfo(SCE_MSG_DIALOG_PROGRESSBAR_TARGET_BAR_DEFAULT, (SceChar8 *)msg);
-        }
+    // Always update progress bar - this is critical!
+    if (args->max > 0) {
+      uint32_t progress = (uint32_t)((current_value * 100) / args->max);
+      if (progress <= 100) {
+        sceMsgDialogProgressBarSetValue(SCE_MSG_DIALOG_PROGRESSBAR_TARGET_BAR_DEFAULT, progress);
       }
     }
-
-    double progress = (double)((100.0 * (double)current_value) / (double)args->max);
-    sceMsgDialogProgressBarSetValue(SCE_MSG_DIALOG_PROGRESSBAR_TARGET_BAR_DEFAULT, (uint32_t)progress);
+    
+    // Show speed info every 2 seconds to avoid lag
+    if (args->show_kbs && cur_micros >= (last_micros + 2000 * 1000)) {
+      delta_micros = cur_micros - last_micros;
+      last_micros = cur_micros;
+      
+      if (delta_micros > 0 && current_value > previous_value) {
+        kbs = (double)(current_value - previous_value) / 1024.0;
+        previous_value = current_value;
+        
+        char msg[64];
+        if (kbs >= 1024.0) {
+          snprintf(msg, sizeof(msg), "%.1f MB/s", kbs / 1024.0);
+        } else if (kbs > 0.1) {
+          snprintf(msg, sizeof(msg), "%.0f KB/s", kbs);
+        } else {
+          strcpy(msg, "Processing...");
+        }
+        
+        sceMsgDialogProgressBarSetInfo(SCE_MSG_DIALOG_PROGRESSBAR_TARGET_BAR_DEFAULT, (SceChar8 *)msg);
+      }
+    }
+    update_count++;
+    
+    // Temporarily disabled KB/s for debugging progress
 
     sceKernelDelayThread(COUNTUP_WAIT);
   }
@@ -68,15 +127,26 @@ static int update_thread(SceSize args_size, UpdateArguments *args) {
 }
 
 SceUID createStartUpdateThread(uint64_t max, int show_kbs) {
+  return createStartUpdateThreadEx(max, show_kbs, NULL, 0);
+}
+
+SceUID createStartUpdateThreadEx(uint64_t max, int show_kbs, char *current_file, int show_eta) {
   current_value = 0;
+  start_time = 0;
+  last_update_time = 0;
+  memset(current_file_name, 0, sizeof(current_file_name));
 
   UpdateArguments args;
   args.max = max;
   args.show_kbs = show_kbs;
+  args.current_file = current_file;
+  args.show_eta = show_eta;
 
+  // Create update thread with normal priority
   SceUID thid = sceKernelCreateThread("update_thread", (SceKernelThreadEntry)update_thread, 0xBF, 0x4000, 0, 0, NULL);
-  if (thid >= 0)
+  if (thid >= 0) {
     sceKernelStartThread(thid, sizeof(UpdateArguments), &args);
+  }
 
   return thid;
 }
@@ -281,8 +351,8 @@ int copy_thread(SceSize args_size, CopyArguments *args) {
     if (strncmp(args->file_list->path, "host0:", 6) != 0 && checkMemoryCardFreeSpace(args->file_list->path, size))
       goto EXIT;
 
-    // Update thread
-    thid = createStartUpdateThread(total, 1);
+    // Update thread with enhanced progress (show speed and ETA for copy operations)
+    thid = createStartUpdateThreadEx(total, 1, NULL, 1);
 
     // Copy process
     uint64_t value = 0;
@@ -675,7 +745,7 @@ int hash_thread(SceSize args_size, HashArguments *args) {
 
   uint64_t max = (uint64_t)(getFileSize(args->file_path) / TRANSFER_SIZE);
 
-  // SHA1 process
+  // Hash process
   uint64_t value = 0;
 
   // Spin off a thread to update the progress dialog 
@@ -687,10 +757,64 @@ int hash_thread(SceSize args_size, HashArguments *args) {
   param.SetProgress = SetProgress;
   param.cancelHandler = cancelHandler;
 
-  uint8_t sha1out[20];
-  int res = getFileSha1(args->file_path, sha1out, &param);
+  int res = 0;
+  char hashmsg[128];
+  memset(hashmsg, 0, sizeof(hashmsg));
+
+  // Perform hash based on type
+  switch (args->hash_type) {
+    case HASH_TYPE_SHA1:
+    {
+      uint8_t sha1out[20];
+      res = getFileSha1(args->file_path, sha1out, &param);
+      if (res > 0) {
+        int i;
+        for (i = 0; i < 20; i++) {
+          char string[4];
+          sprintf(string, "%02X", sha1out[i]);
+          strcat(hashmsg, string);
+          if (i == 9)
+            strcat(hashmsg, "\n");
+        }
+      }
+      break;
+    }
+    case HASH_TYPE_MD5:
+    {
+      uint8_t md5out[16];
+      res = getFileMd5(args->file_path, md5out, &param);
+      if (res > 0) {
+        int i;
+        for (i = 0; i < 16; i++) {
+          char string[4];
+          sprintf(string, "%02X", md5out[i]);
+          strcat(hashmsg, string);
+          if (i == 7)
+            strcat(hashmsg, "\n");
+        }
+      }
+      break;
+    }
+    case HASH_TYPE_SHA256:
+    {
+      uint8_t sha256out[32];
+      res = getFileSha256(args->file_path, sha256out, &param);
+      if (res > 0) {
+        int i;
+        for (i = 0; i < 32; i++) {
+          char string[4];
+          sprintf(string, "%02X", sha256out[i]);
+          strcat(hashmsg, string);
+          if (i == 15)
+            strcat(hashmsg, "\n");
+        }
+      }
+      break;
+    }
+  }
+
   if (res <= 0) {
-    // SHA1 Didn't complete successfully, or was canceled
+    // Hash didn't complete successfully, or was canceled
     closeWaitDialog();
     setDialogStep(DIALOG_STEP_CANCELED);
     errorDialog(res);
@@ -704,23 +828,7 @@ int hash_thread(SceSize args_size, HashArguments *args) {
   // Close
   closeWaitDialog();
 
-  char sha1msg[42];
-  memset(sha1msg, 0, sizeof(sha1msg));
-
-  // Construct SHA1 sum string
-  int i;
-  for (i = 0; i < 20; i++) {
-    char string[4];
-    sprintf(string, "%02X", sha1out[i]);
-    strcat(sha1msg, string);
-
-    if (i == 9)
-      strcat(sha1msg, "\n");
-  }
-
-  sha1msg[41] = '\0';
-
-  infoDialog(sha1msg);
+  infoDialog(hashmsg);
 
 EXIT:
 

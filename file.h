@@ -76,6 +76,7 @@ typedef struct {
   uint64_t max;
   void (* SetProgress)(uint64_t value, uint64_t max);
   int (* cancelHandler)();
+  SceUID fp;
 } FileProcessParam;
 
 typedef struct FileListEntry {
@@ -117,6 +118,8 @@ char * getFilename(const char *path);
 
 int getFileSize(const char *file);
 int getFileSha1(const char *file, uint8_t *pSha1Out, FileProcessParam *param);
+int getFileMd5(const char *file, uint8_t *pMd5Out, FileProcessParam *param);
+int getFileSha256(const char *file, uint8_t *pSha256Out, FileProcessParam *param);
 int getPathInfo(const char *path, uint64_t *size, uint32_t *folders, uint32_t *files, int (* handler)(const char *path));
 int removePath(const char *path, FileProcessParam *param);
 int copyFile(const char *src_path, const char *dst_path, FileProcessParam *param);

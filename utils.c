@@ -125,6 +125,45 @@ int checkMemoryCardFreeSpace(const char *path, uint64_t size) {
   return 0;
 }
 
+int getPartitionFreeSpace(const char *device, uint64_t *free_size, uint64_t *max_size) {
+  if (!device || !free_size || !max_size)
+    return -1;
+    
+  *free_size = 0;
+  *max_size = 0;
+  
+  if (is_safe_mode) {
+    return sceAppMgrGetDevInfo(device, max_size, free_size);
+  } else {
+    SceIoDevInfo info;
+    memset(&info, 0, sizeof(SceIoDevInfo));
+    int ret = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
+    if (ret >= 0) {
+      *free_size = info.free_size;
+      *max_size = info.max_size;
+    }
+    return ret;
+  }
+}
+
+uint32_t getFreeSpaceColor(uint64_t free_size, uint64_t max_size) {
+  if (max_size == 0) 
+    return 0xFF808080; // Gray for unknown
+    
+  float percentage = (float)free_size / (float)max_size;
+  
+  if (percentage > 0.5f) {
+    // Green (sufficient space)
+    return 0xFF00FF00;
+  } else if (percentage > 0.2f) {
+    // Orange (space running low)
+    return 0xFF00AAFF;
+  } else {
+    // Red (space almost full)
+    return 0xFF0000FF;
+  }
+}
+
 static int power_tick_thread(SceSize args, void *argp) {
   while (1) {
     if (lock_power > 0) {

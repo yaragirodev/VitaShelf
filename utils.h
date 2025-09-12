@@ -85,6 +85,8 @@ void infoDialog(const char *msg, ...);
 
 // Storage helpers
 int checkMemoryCardFreeSpace(const char *path, uint64_t size);
+int getPartitionFreeSpace(const char *device, uint64_t *free_size, uint64_t *max_size);
+uint32_t getFreeSpaceColor(uint64_t free_size, uint64_t max_size);
 
 // Power management helpers
 void initPowerTickThread(void);

@@ -147,6 +147,32 @@ void drawShellInfo(const char *path) {
 
   x = date_time_x - STATUS_BAR_SPACE_X;
 
+  // Storage info - show current partition free space
+  char current_device[8] = {0};
+  char *p = strchr(path, ':');
+  if (p && (p - path) <= 6) {
+    strncpy(current_device, path, p - path + 1);
+    current_device[p - path + 1] = '\0';
+    
+    uint64_t free_size = 0, max_size = 0;
+    if (getPartitionFreeSpace(current_device, &free_size, &max_size) >= 0 && max_size > 0) {
+      char storage_string[32];
+      char free_string[16];
+      getSizeString(free_string, free_size);
+      
+      snprintf(storage_string, sizeof(storage_string), "%s: %s free", 
+               current_device, free_string);
+      
+      // Get color based on free space percentage
+      uint32_t storage_color = getFreeSpaceColor(free_size, max_size);
+      
+      float storage_x = ALIGN_RIGHT(x, pgf_text_width(storage_string));
+      pgf_draw_text(storage_x, SHELL_MARGIN_Y, storage_color, storage_string);
+      
+      x = storage_x - STATUS_BAR_SPACE_X;
+    }
+  }
+
   // FTP
   if (ftpvita_is_initialized()) {
     float ftp_x = ALIGN_RIGHT(x, vita2d_texture_get_width(ftp_image));

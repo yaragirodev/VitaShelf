@@ -978,22 +978,28 @@ int browserMain() {
         // File information
         if (strcmp(file_entry->name, DIR_UP) != 0) {
           if (dir_level == 0) {
-            char used_size_string[16], max_size_string[16];
+            char used_size_string[16], max_size_string[16], free_size_string[16];
             int max_size_x = ALIGN_RIGHT(INFORMATION_X, pgf_text_width("0000.00 MB"));
             int separator_x = ALIGN_RIGHT(max_size_x, pgf_text_width("  /  "));
+            
             if (file_entry->size != 0 && file_entry->size2 != 0) {
               getSizeString(used_size_string, file_entry->size2 - file_entry->size);
               getSizeString(max_size_string, file_entry->size2);
+              getSizeString(free_size_string, file_entry->size);
             } else {
               strcpy(used_size_string, "-");
               strcpy(max_size_string, "-");
+              strcpy(free_size_string, "-");
             }
             
+            // Draw total size
             float x = ALIGN_RIGHT(INFORMATION_X, pgf_text_width(max_size_string));
             pgf_draw_text(x, y, color, max_size_string);
             pgf_draw_text(separator_x, y, color, "  /");
             x = ALIGN_RIGHT(separator_x, pgf_text_width(used_size_string));
             pgf_draw_text(x, y, color, used_size_string);
+            
+            // Note: Free space info is now shown in status bar to avoid overlapping
           } else {
             char *str = NULL;
             if (!file_entry->is_folder) {

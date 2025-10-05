@@ -35,7 +35,7 @@ YEAR                                 = "Год"
 
 # Hex editor strings
 OFFSET                               = "Смещение"
-OPEN_HEX_EDITOR                      = "Открыть HEX редактор"
+OPEN_HEX_EDITOR                      = "Открыть в HEX редакторе"
 
 # Text editor strings
 EDIT_LINE                            = "Редактировать строку"
